@@ -55,6 +55,10 @@ int eeprom_read_current_byte(struct eeprom *e);
  * Note: eeprom must have been selected by ioctl(fd,I2C_SLAVE,address) 
  */
 int eeprom_write_byte(struct eeprom *e, __u16 mem_addr, __u8 data);
+/*
+ * sets EEPROM i2c address to [i2c_addr]
+ */
+int eeprom_set_addr(struct eeprom *e, int i2c_addr);
 
 #endif
 

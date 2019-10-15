@@ -60,7 +60,7 @@ static int i2c_write_3b(struct eeprom *e, __s8 i2c_addr, __u8 buf[3])
 	int r;
 	if( ( r = ioctl(e->fd, I2C_SLAVE, i2c_addr)) < 0)
 	{
-		fprintf(stderr, "Error i2c_write_3b: %s\n", strerror(errno));
+		fprintf(stderr, "Error setting slave address i2c_write_3b: %s\n", strerror(errno));
 		return r;
 	}
 
@@ -68,7 +68,7 @@ static int i2c_write_3b(struct eeprom *e, __s8 i2c_addr, __u8 buf[3])
 	// the __u16 data field will be byte swapped by the SMBus protocol
 	r = i2c_smbus_write_word_data(e->fd, buf[0], buf[2] << 8 | buf[1]);
 	if(r < 0)
-		fprintf(stderr, "Error i2c_write_3b: %s\n", strerror(errno));
+		fprintf(stderr, "Error writing i2c_write_3b: %s\n", strerror(errno));
 	usleep(10);
 	return r;
 }
@@ -217,3 +217,7 @@ int eeprom_write_byte(struct eeprom *e, __u16 mem_addr, __u8 data)
 	return -1;
 }
 
+int eeprom_set_addr(struct eeprom *e, int i2c_addr)
+{
+	e->i2c_addr = i2c_addr;	
+}
