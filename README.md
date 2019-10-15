@@ -54,24 +54,3 @@ One of -w, -r or -a should be specified. If all are specified,
 the read will take place after the write.
 -s cannot be specified with -w.
 ```
-
----
-
-# API
-
-```
-// Open device
-int eeprom_open(char *dev_fqn, int i2c_addr, int bits, int delay, struct eeprom*);
-
-// Get EEPROM memory size
-__u16 getEEPROMbytes(struct eeprom* e);
-
-// Read data from EEPROM
-int eeprom_read_byte(struct eeprom* e, __u16 mem_addr);
-
-// Write data to EEPROM
-int eeprom_write_byte(struct eeprom *e, __u16 mem_addr, __u8 data);
-
-// Change i2c address of EEPROM chip
-int eeprom_set_addr(struct eeprom *e, int i2c_addr);
-```
