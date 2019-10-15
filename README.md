@@ -54,7 +54,7 @@ Usage: ./i2ceeprom <i2c_bus> <i2c_addr> [i2c_addr_end][FLAGS]
                    Dumps output in binary format.
     -v             Verbose.
     -s <value>     Set all bytes in EEPROM to this value
-One of -w, -r or -a should be specified. If all are specified,
+One of -w, -r, -o, -a or -s must be specified. If both read and write operations are specified,
 the read will take place after the write.
 -s cannot be specified with -w.
 ```
