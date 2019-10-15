@@ -58,7 +58,12 @@ int eeprom_write_byte(struct eeprom *e, __u16 mem_addr, __u8 data);
 /*
  * sets EEPROM i2c address to [i2c_addr]
  */
-int eeprom_set_addr(struct eeprom *e, int i2c_addr);
+void eeprom_set_addr(struct eeprom *e, int i2c_addr);
+/*
+ * detects if an i2c device exists at [i2c_addr]
+ */
+int eeprom_detect(struct eeprom *e, int i2c_addr);
+
 
 #endif
 

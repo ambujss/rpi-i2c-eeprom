@@ -43,7 +43,7 @@ void print_help(void) {
          "                   Dumps output in binary format.\n"
          "    -v             Verbose.\n"
          "    -s <value>     Set all bytes in EEPROM to this value\n"
-         "One of -w, -r or -a should be specified. If all are specified, \n"
+         "One of -w, -r, -o, -a or -s must be specified. If both read and write operations are specified, \n"
          "the read will take place after the write.\n"
          "-s cannot be specified with -w.\n");
 }
@@ -276,6 +276,10 @@ int main(int argc, char *argv[])
   uint8_t rdata[256];
 
   if (do_write) {
+    if (-1 == eeprom_detect(&e, i2c_addr)) {
+      fprintf(stderr, "No i2c device found at address 0x%02x on bus %d", i2c_addr, i2c_bus);
+      return 6;
+    }
     int len = strlen(contents);
     len = len >= eeprom_bytes ? eeprom_bytes - 1: len;
     for(i=0; i<len; i++) {
@@ -293,6 +297,10 @@ int main(int argc, char *argv[])
   }
 
   else if (set) {
+    if (-1 == eeprom_detect(&e, i2c_addr)) {
+      fprintf(stderr, "No i2c device found at address 0x%02x on bus %d", i2c_addr, i2c_bus);
+      return 6;
+    }
     int val = strtol(setstr, NULL, 16);
     if (val & 0xff != val) {
       fprintf(stderr, "Value to set must be between 0 and 255\n");
@@ -317,6 +325,10 @@ int main(int argc, char *argv[])
     int end_addr = i2c_addr_end >= 0 ? i2c_addr_end : i2c_addr;
     for (addr = i2c_addr; addr <= end_addr; addr++) {
       int j;
+      if (-1 == eeprom_detect(&e, addr)) {
+        fprintf(stderr, "No i2c device found at address 0x%02x on bus %d", addr, i2c_bus);
+        continue;
+      }
       snprintf(fname, 64, "%s_0x%x", outfile, addr);
       FILE* fptr = fopen(fname, "wb");
       eeprom_set_addr(&e, addr);
@@ -349,6 +361,11 @@ int main(int argc, char *argv[])
       int j;
       int done = 0;
       int bytes_read = 0;
+      if (-1 == eeprom_detect(&e, addr)) {
+        fprintf(stderr, "No i2c device found at address 0x%02x on bus %d\n", addr, i2c_bus);
+        fprintf(fptr, "--\n");
+        continue;
+      }
       eeprom_set_addr(&e, addr);
       for (j=0; j<eeprom_bytes && !done; j+=256) {
         memset(rdata, 0, sizeof(rdata));

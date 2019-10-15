@@ -217,7 +217,22 @@ int eeprom_write_byte(struct eeprom *e, __u16 mem_addr, __u8 data)
 	return -1;
 }
 
-int eeprom_set_addr(struct eeprom *e, int i2c_addr)
+void eeprom_set_addr(struct eeprom *e, int i2c_addr)
 {
 	e->i2c_addr = i2c_addr;	
+}
+
+int eeprom_detect(struct eeprom *e, int i2c_addr)
+{
+	int r;
+	if( ( r = ioctl(e->fd, I2C_SLAVE, i2c_addr)) < 0)
+	{
+		if (errno == EBUSY) {
+			return 0;
+		} else {
+			fprintf(stderr, "Error setting slave address i2c_write_3b: %s\n", strerror(errno));
+			return r;
+		}
+	}
+	return eeprom_read_current_byte(e);
 }
