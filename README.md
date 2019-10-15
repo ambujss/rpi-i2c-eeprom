@@ -32,6 +32,10 @@ cc -o i2ceeprom main.c 24cXX.c -DC256
 for 24C512   
 cc -o i2ceeprom main.c 24cXX.c -DC512
 
+---
+
+# Usage
+
 ```
 Usage: ./i2ceeprom <i2c_bus> <i2c_addr> [i2c_addr_end][FLAGS]
     i2c_bus        I2C bus number
