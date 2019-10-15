@@ -2,15 +2,15 @@
   I forked from here.
   https://www.richud.com/wiki/Rasberry_Pi_I2C_EEPROM_Program
 
-  24C02  cc -o main main.c 24cXX.c -DC02
-  24C04  cc -o main main.c 24cXX.c -DC04
-  24C08  cc -o main main.c 24cXX.c -DC08
-  24C16  cc -o main main.c 24cXX.c -DC16
-  24C32  cc -o main main.c 24cXX.c -DC32
-  24C64  cc -o main main.c 24cXX.c -DC64
-  24C128 cc -o main main.c 24cXX.c -DC128
-  24C256 cc -o main main.c 24cXX.c -DC256
-  24C512 cc -o main main.c 24cXX.c -DC512
+  24C02  cc -o i2ceeprom main.c 24cXX.c -DC02
+  24C04  cc -o i2ceeprom main.c 24cXX.c -DC04
+  24C08  cc -o i2ceeprom main.c 24cXX.c -DC08
+  24C16  cc -o i2ceeprom main.c 24cXX.c -DC16
+  24C32  cc -o i2ceeprom main.c 24cXX.c -DC32
+  24C64  cc -o i2ceeprom main.c 24cXX.c -DC64
+  24C128 cc -o i2ceeprom main.c 24cXX.c -DC128
+  24C256 cc -o i2ceeprom main.c 24cXX.c -DC256
+  24C512 cc -o i2ceeprom main.c 24cXX.c -DC512
 */
 
 #include <stdio.h>
