@@ -32,7 +32,8 @@ cc -o i2ceeprom main.c 24cXX.c -DC256
 for 24C512   
 cc -o i2ceeprom main.c 24cXX.c -DC512
 
-```Usage: ./i2ceeprom <i2c_bus> <i2c_addr> [i2c_addr_end][FLAGS]
+```
+Usage: ./i2ceeprom <i2c_bus> <i2c_addr> [i2c_addr_end][FLAGS]
     i2c_bus        I2C bus number
     i2c_addr       I2C Address of EEPROM chip. If i2c_addr_end is specified, this is the first address
                    of the range of addresses from i2c_addr to i2c_addr_end.
@@ -51,7 +52,8 @@ cc -o i2ceeprom main.c 24cXX.c -DC512
     -s <value>     Set all bytes in EEPROM to this value
 One of -w, -r or -a should be specified. If all are specified,
 the read will take place after the write.
--s cannot be specified with -w.```
+-s cannot be specified with -w.
+```
 
 ---
 
