@@ -47,11 +47,18 @@ Usage: ./i2ceeprom <i2c_bus> <i2c_addr> [i2c_addr_end][FLAGS]
                    Will read 'bytes' worth of data if specified, else till the first null byte (0) is encountered.
                    If i2c_addr_end is specified, all EEPROMs from i2c_addr to i2c_addr_end will be read. Contents of
                    each EEPROM will be output to a new line.
+    -m <bytes>     Read contents of EEPROM up to a null byte (0), or 'bytes' number of bytes, whichever comes first.
     -o <outfile>   Output filename. If used with -r, Contents of all EEPROMS will be written to <outfile>, separated by a newline.
                    If used with -a, contents of each EEPROM will be written to its own file
                    which will be named as <outfile>_<addr>
     -a             Read the entire EEPROM. -o needs to be specified with this flag.
                    Dumps output in binary format.
+    -b             Dump output in binary format. The format is as follows:
+                    byte(0)        : I2C address of EEPROM 0
+                    byte(1-2)      : Number of bytes (n0) read from EEPROM. This field is in the Big Endian format.
+                    byte(3-(n0+3)) : Contents of EEPROM
+                    byte(n0+4)     : I2C address of EEPROM 1. (Rest of the bytes folow the same format as EEPROM 0)
+                      ... and soon and so forth for every EEPROM specified.
     -v             Verbose.
     -s <value>     Set all bytes in EEPROM to this value
 One of -w, -r, -o, -a or -s must be specified. If both read and write operations are specified,

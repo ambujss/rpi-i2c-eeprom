@@ -36,11 +36,18 @@ void print_help(void) {
          "                   Will read 'bytes' worth of data if specified, else till the first null byte (0) is encountered.\n"
          "                   If i2c_addr_end is specified, all EEPROMs from i2c_addr to i2c_addr_end will be read. Contents of\n"
          "                   each EEPROM will be output to a new line.\n"
+         "    -m <bytes>     Read contents of EEPROM up to a null byte (0), or 'bytes' worth of data, whichever comes first.\n"
          "    -o <outfile>   Output filename. If used with -r, Contents of all EEPROMS will be written to <outfile>, separated by a newline.\n"
          "                   If used with -a, contents of each EEPROM will be written to its own file\n"
          "                   which will be named as <outfile>_<addr>\n"
          "    -a             Read the entire EEPROM. -o needs to be specified with this flag.\n"
          "                   Dumps output in binary format.\n"
+         "    -b             Dump output in binary format. The format is as follows:\n"
+         "                    byte(0)        : I2C address of EEPROM 0\n"
+         "                    byte(1-2)      : Number of bytes (n0) read from EEPROM. This field is in the Big Endian format.\n"
+         "                    byte(3-(n0+3)) : Contents of EEPROM\n"
+         "                    byte(n0+4)     : I2C address of EEPROM 1. (Rest of the bytes folow the same format as EEPROM 0)\n"
+         "                      ... and soon and so forth for every EEPROM specified.\n"
          "    -v             Verbose.\n"
          "    -s <value>     Set all bytes in EEPROM to this value\n"
          "One of -w, -r, -o, -a or -s must be specified. If both read and write operations are specified, \n"
@@ -92,6 +99,8 @@ int main(int argc, char *argv[])
   int do_read_all = 0;
   int verbose = 0;
   int set = 0;
+  int max_bytes = -1;
+  int bin = 0;
   char* setstr = NULL;
   char* contents = NULL;
   char* outfile = NULL;
@@ -117,6 +126,22 @@ int main(int argc, char *argv[])
               }
               i++;
             }
+            break;
+          case 'm':
+            // this flag requires an argument, check for it
+            if (v[j+1] || i+1 >= argc) {
+              // if the flags list didn't end here or we reached end or arg list, error
+              fprintf(stderr, "-m flag requires an argument\n", v[j]);
+              print_help();
+              return 1;
+            }
+            max_bytes = strtol(argv[i+1], NULL, 16);
+            if (max_bytes == 0) {
+              fprintf(stderr, "Please provide a number greater than 0 for -m\n");
+              print_help();
+              return 1;
+            }
+            i++;
             break;
           case 'a':
             do_read_all = 1;
@@ -158,6 +183,9 @@ int main(int argc, char *argv[])
             }
             outfile = argv[i+1];
             i++;
+            break;
+          case 'b':
+            bin = 1;
             break;
           default:
             fprintf(stderr, "Invalid flag option %c\n", v[j]);
@@ -331,6 +359,10 @@ int main(int argc, char *argv[])
       }
       snprintf(fname, 64, "%s_0x%x", outfile, addr);
       FILE* fptr = fopen(fname, "wb");
+      if (NULL == fptr) {
+        fprintf(stderr, "Unable to open file %s: %s", fname, strerror(errno));
+        return 100;
+      }
       eeprom_set_addr(&e, addr);
       for (j=0; j<eeprom_bytes; j+=256) {
         memset(rdata, 0, sizeof(rdata));
@@ -356,6 +388,10 @@ int main(int argc, char *argv[])
     FILE* fptr = stdout;
     if (outfile) {
       fptr = fopen(outfile, "w");
+      if (NULL == fptr) {
+        fprintf(stderr, "Unable to open file %s: %s", outfile, strerror(errno));
+        return 100;
+      }
     }
     for (addr = i2c_addr; addr <= end_addr; addr++) {
       int j;
@@ -363,10 +399,23 @@ int main(int argc, char *argv[])
       int bytes_read = 0;
       if (-1 == eeprom_detect(&e, addr)) {
         fprintf(stderr, "No i2c device found at address 0x%02x on bus %d\n", addr, i2c_bus);
-        fprintf(fptr, "--\n");
+        if (bin) {
+          rdata[0] = addr;
+          rdata[1] = 0;
+          rdata[2] = 0;
+          fwrite(rdata, 1, 3, fptr);
+        } else {
+          fprintf(fptr, "--\n");
+        }
         continue;
       }
       eeprom_set_addr(&e, addr);
+      // Use tmpfile to hold contents of EEPROM
+      FILE* tmp = tmpfile();
+      if (NULL == tmp) {
+        fprintf(stderr, "Unable to open tmpfile: %s",strerror(errno));
+        return 100;
+      }
       for (j=0; j<eeprom_bytes && !done; j+=256) {
         memset(rdata, 0, sizeof(rdata));
         for(i=0;i<256;i++) {
@@ -376,7 +425,12 @@ int main(int argc, char *argv[])
           if (ret == -1) fprintf(stderr, "eeprom_read_byte ret=%d at %x\n",ret,mem_addr);
           else rdata[i] = ret;
           bytes_read++;
-          if (read_bytes > 0) {
+          if (max_bytes > 0) {
+            if (ret == 0 || bytes_read == max_bytes) {
+              done = 1;
+              break;
+            }
+          } else if (read_bytes > 0) {
             if (bytes_read == read_bytes) {
               done = 1;
               break;
@@ -386,12 +440,34 @@ int main(int argc, char *argv[])
             break;
           }
         }
-        if (i != fwrite(rdata, 1, i, fptr)) {
+        if (i != fwrite(rdata, 1, i, tmp)) {
           fprintf(stderr, "Write to file %s failed\n", outfile);
           return 4;
         }
       }
-      fwrite("\n", 1, 1, fptr);
+      rewind(tmp);
+      if (bin) {
+        rdata[0] = addr;
+        rdata[1] = bytes_read & 0xff;
+        rdata[2] = (bytes_read >> 8) & 0xff;
+        fwrite(rdata, 1, 3, fptr);
+      }
+      for (j=0; j<eeprom_bytes; j+=256) {
+        if (feof(tmp)) {
+          break;
+        }
+        memset(rdata, 0, sizeof(rdata));
+        int count = 0;
+        count = fread(rdata, 1, 256, tmp);
+        if (ferror(tmp)) {
+          fprintf(stderr, "Error reading from tmpfile\n");
+          return 4;
+        }
+        fwrite(rdata, 1, count, fptr);
+      }
+      fclose(tmp);
+      if(!bin)
+        fwrite("\n", 1, 1, fptr);
     }
     if (fptr != stdout)
       fclose(fptr);
